@@ -25,6 +25,7 @@ import { CommandPalette } from "@/components/dashboard/shell/command-palette";
 import { DashboardContext, useFilters } from "@/components/dashboard/shell/dashboard";
 import { dashboardSearch, searchPatch } from "@/components/dashboard/shell/filters";
 import type { FilterPatch } from "@/components/dashboard/shell/filters";
+import { NoticesProvider } from "@/components/dashboard/shell/notifications";
 import { DashboardShell } from "@/components/dashboard/shell/shell";
 import { SessionExpired, SyncCard, leaveSession } from "@/components/dashboard/shell/status";
 import { offerProfile, warmAccountState } from "@/lib/account-state";
@@ -112,14 +113,9 @@ function Ledgered() {
         return <Navigate replace to="/" />;
     }
     return (
-        <DashboardShell bare={onboarding}>
-            <Toast.Provider position="bottom-right">
-                <Unlocked />
-            </Toast.Provider>
-            <LiveDashboard books={books}>
-                <Outlet />
-            </LiveDashboard>
-        </DashboardShell>
+        <LiveDashboard bare={onboarding} books={books}>
+            <Outlet />
+        </LiveDashboard>
     );
 }
 
@@ -235,7 +231,7 @@ function useLiveLedger(userId: string | undefined, onLanded: (outcome: "landed" 
     }, [dbClient, onLanded, queryClient, router, userId]);
 }
 
-function LiveDashboard({ books, children }: { books: LedgerBooks; children: ReactNode }) {
+function LiveDashboard({ bare, books, children }: { bare: boolean; books: LedgerBooks; children: ReactNode }) {
     const loaded = Route.useLoaderData();
     const search = Route.useSearch();
     const navigate = useNavigate();
@@ -272,12 +268,19 @@ function LiveDashboard({ books, children }: { books: LedgerBooks; children: Reac
     );
     return (
         <DashboardContext value={dashboard}>
-            <AccountFlowsProvider>
-                {waiting ? <DashboardPending /> : children}
-                <CommandPalette />
-                <SyncCard />
-                <SessionExpired />
-            </AccountFlowsProvider>
+            <Toast.Provider position="bottom-right">
+                <NoticesProvider>
+                    <DashboardShell bare={bare}>
+                        <Unlocked />
+                        <AccountFlowsProvider>
+                            {waiting ? <DashboardPending /> : children}
+                            <CommandPalette />
+                            <SyncCard />
+                            <SessionExpired />
+                        </AccountFlowsProvider>
+                    </DashboardShell>
+                </NoticesProvider>
+            </Toast.Provider>
         </DashboardContext>
     );
 }
